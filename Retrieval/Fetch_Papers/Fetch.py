@@ -1,9 +1,13 @@
 import arxiv
 from urllib.request import urlretrieve
+from urllib.error import URLError
 import pandas as pd
 from collections import defaultdict
+from tqdm import tqdm
+import os
 
-def fetch_and_download_papers(search_query, paper_dictionary, max_papers = 5):
+
+def fetch_and_download_papers(search_query, paper_dictionary, max_papers = 1200):
 
     client = arxiv.Client()
 
@@ -15,11 +19,22 @@ def fetch_and_download_papers(search_query, paper_dictionary, max_papers = 5):
 
     results = client.results(search)
 
-    for r in results:
+    for r in tqdm(results, desc=f"Downloading Research Papers for the query - {search_query}"):
 
         file_path_pdf = f"Research_Papers/{r.get_short_id()}.pdf"
-    
-        urlretrieve(r.pdf_url, file_path_pdf)
+
+        if os.path.exists(file_path_pdf):
+            tqdm.write(f"[INFO] Paper {r.get_short_id()} already exists, skipping download.")
+            continue
+
+        try:
+            urlretrieve(r.pdf_url, file_path_pdf)
+        except URLError as e:
+            tqdm.write(f"[WARNING] {e} encountered for paper with id {r.get_short_id()}, skipping...")
+            continue
+
+        
+        
 
         if r.get_short_id() not in paper_dictionary["ID"]:
 
@@ -37,8 +52,8 @@ def fetch_and_download_papers(search_query, paper_dictionary, max_papers = 5):
 paper_dictionary = defaultdict(list)
 
 
-fetch_and_download_papers("machine learning", paper_dictionary)
+fetch_and_download_papers("Machine Learning", paper_dictionary)
 fetch_and_download_papers("Robotics", paper_dictionary)
-fetch_and_download_papers("Neural ODE", paper_dictionary)
+fetch_and_download_papers("Computer Vision", paper_dictionary)
 
-pd.DataFrame(paper_dictionary).to_csv("Research_Papers/papers_metadata.csv", index=False)
+pd.DataFrame(paper_dictionary).to_csv("Retrieval/Fetch_Papers/Research_Papers/papers_metadata.csv", index=False)
