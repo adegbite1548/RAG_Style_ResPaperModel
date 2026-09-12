@@ -12,7 +12,7 @@ client_mpnet = chromadb.PersistentClient(path=db_path)
 
 database_mpnet = Database(client_mpnet, embedding_model=SentenceTransformer("sentence-transformers/all-mpnet-base-v2"))
 
-collection = database_mpnet.create_db_collection("research_paper_collection_mpnet_base")
+collection = database_mpnet.instantiate_db_collection("research_paper_collection_mpnet_base")
 
 
 

@@ -13,8 +13,9 @@ def read_pdf(pdf_file):
 
     pdf_text_clean = pdf_text.encode("utf-8", "ignore").decode("utf-8")
 
-    pdf_text_split = re.split(r"\n?\d*\.*\s*References\n|\n?\d*\.?\s*Bibliography\n", pdf_text_clean, flags=re.IGNORECASE)
+    pdf_text_split = re.split(r"\n*\d*\.*\s*References\n*|\n*\d*\.?\s*Bibliography\n*", pdf_text_clean, flags=re.IGNORECASE)
 
     return pdf_text_split[0]
 
+# print(read_pdf("Retrieval/Fetch_Papers/Research_Papers/2608.24741v1.pdf"))
 

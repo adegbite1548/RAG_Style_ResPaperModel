@@ -10,16 +10,47 @@ database = Database(client, embedding_model=SentenceTransformer("sentence-transf
 
 collection = database.instantiate_db_collection("research_paper_collection_mpnet_base")
 
-query = "Recommend me research papers that have to do with robotics and planning"
+print("######## Research Paper Recommender Prototype ########\n")
+query = input("Enter the type of research paper you would like to get recommendations for: ")
 
-retrieved_chunks = database.query_db(collection, query)
 
-top_k_unique_chunks = database.get_top_k_papers(retrieved_chunks)
+conversation_history = []
 
-llm_context = aug.augment_query_results(top_k_unique_chunks)
+if query.strip().lower() != "exit":
 
-print(f"\n{llm_context}\n")
 
-llm_prompt = gen.generate_llm_prompt(llm_context, query)
+    while True:
 
-print(gen.ask_llm(llm_prompt))
+        retrieved_chunks = database.query_db(collection, query)
+        top_k_unique_chunks = database.get_top_k_papers(retrieved_chunks)
+
+        llm_context = aug.augment_query_results(top_k_unique_chunks)
+        print(llm_context)
+        llm_prompt = gen.generate_llm_prompt(llm_context, query)
+        llm_answer = gen.ask_llm(llm_prompt)
+
+        conversation_history.append({
+            "role": "user",
+            "content": query
+        })
+
+        conversation_history.append({
+            "role": "llm",
+            "content": llm_answer
+        })
+
+        print(llm_answer)
+
+        follow_up = input("\nEnter a follow up prompt if you would like to fine tune your search: ")
+
+        if follow_up.strip().lower() == "exit":
+            break
+
+        query = gen.rewrite_query(follow_up, conversation_history)
+        print(f"Query: {query}")
+
+   
+# Recommend me research papers linked to neural ODE's in robotics
+
+    
+    
