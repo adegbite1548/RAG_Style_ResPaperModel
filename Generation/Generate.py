@@ -1,12 +1,12 @@
 import ollama
 
 
-def generate_llm_prompt(context, query):
+def generate_llm_prompt(context, query, conversation_history):
 
     return f"""
 You are a research paper ranker.
 
-Answer the user's query using ONLY the provided context.
+Answer the user's query using ONLY the provided paper titles and context.
 
 The context contains information about multiple research papers.
 Consider ALL papers in the context before answering.
@@ -19,7 +19,6 @@ Do not invent paper titles, authors, or details that are not present in the cont
 You should RANK the papers, not discard them simply because they are not highly relevant.
 Additionally, you can have another section specifically for these other papers that are not highly relevant.
 
-Do not require the paper's primary objective to exactly match the query.
 
 A paper can still be relevant if it contains experiments, methods,
 results, or discussion that provide useful evidence about the query.
@@ -31,8 +30,20 @@ Your Answer MUST be numbered and take the following format for each ranking:
     - [ACTUAL PAPER TITLE]
     - Reason: [Brief explanation of why this paper is relevant to the query.]
 
+Additionally, DO NOT repeat papers in your ranking.
 
-Context:
+Finally, you also have the coversation history which shows user prompts and your responses. You ARE THE Assistant.
+If papers in the context are also in the conversation history, simply DO NOT talk about them in your response AT ALL.
+
+IMPORTANT:
+    - DO NOT repeat papers that are in conversation history EVEN WHEN they are highly relevant.
+    - For example, if a user asks for papers similar to something you ranked before, do not include that result in your next ranking.
+    - You can tell the user that no other papers in the database are relevant to their query if all papers in conversation history have been listed before.
+
+CONVERSATION HISTORY:
+{conversation_history}    
+
+PAPER TITLES AND CONTEXT:
 {context}
 
 Query:
@@ -40,7 +51,7 @@ Query:
 """
 
 
-def ask_llm(llm_prompt, llm="llama3:8b"):
+def ask_llm(llm_prompt, llm="mistral:7b"):
     return ollama.generate(
         model=llm, 
         prompt=llm_prompt,
@@ -50,7 +61,8 @@ def ask_llm(llm_prompt, llm="llama3:8b"):
 
         )['response']
 
-def rewrite_query(follow_up, conversation_history, llm="llama3:8b"):
+def rewrite_query(follow_up, conversation_history, llm="mistral:7b"):
+        
 
     prompt = f"""
 You are a research query rewriting assistant.

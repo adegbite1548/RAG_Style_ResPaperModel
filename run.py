@@ -14,7 +14,7 @@ print("######## Research Paper Recommender Prototype ########\n")
 query = input("Enter the type of research paper you would like to get recommendations for: ")
 
 
-conversation_history = []
+conversation_history = ""
 
 if query.strip().lower() != "exit":
 
@@ -26,18 +26,17 @@ if query.strip().lower() != "exit":
 
         llm_context = aug.augment_query_results(top_k_unique_chunks)
         print(llm_context)
-        llm_prompt = gen.generate_llm_prompt(llm_context, query)
+        llm_prompt = gen.generate_llm_prompt(llm_context, query, conversation_history)
         llm_answer = gen.ask_llm(llm_prompt)
 
-        conversation_history.append({
-            "role": "user",
-            "content": query
-        })
+        conversation_history += f"""
+        
+        ROLE: User
+        CONTENT: {query}
 
-        conversation_history.append({
-            "role": "llm",
-            "content": llm_answer
-        })
+        ROLE: Assistant
+        CONTENT: {llm_answer}
+                """
 
         print(llm_answer)
 
