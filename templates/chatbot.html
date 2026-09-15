@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Paper Recommender</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <nav>
+        <a href="index.html" class="logo">Research Paper Recommender</a>
+    </nav>
+
+    <main class="chat-container">
+
+        <div class="chat-header">
+            <h1>Research Paper Recommender</h1>
+            <p>Ask me to find research papers about anything you're interested in.</p>
+        </div>
+
+        <div class="chat-box" id="chat-box">
+
+            <div class="message bot-message">
+                <p>
+                    Hello! What kind of research papers are you looking for?
+                </p>
+            </div>
+
+        </div>
+
+        <div class="input-area">
+
+            <input
+                id="query-input"
+                type="text"
+                placeholder="Ask about research papers..."
+            >
+
+            <button id="send-button" onclick="sendMessage()">Send</button>
+
+        </div>
+
+
+        <script>
+        let firstMessage = true;
+        
+
+        async function sendMessage() {
+
+            const input = document.getElementById("query-input");
+            const chatBox = document.getElementById("chat-box");
+            const sendButton = document.getElementById("send-button");
+
+            const query = input.value;
+
+            if (query.trim() === "") {
+                return;
+            }
+
+            input.value = "";
+
+            input.disabled = true; 
+            sendButton.disabled = true;
+
+            // Display user's message
+
+            chatBox.innerHTML += `
+                <div class="message user-message">
+                    <p>${query}</p>
+                </div>
+            `;
+
+
+            // Send query to Flask
+
+            const response = await fetch("/ask", {
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    query: query,
+                    first_message: firstMessage
+                })
+
+            });
+            
+            firstMessage = false;
+
+            const data = await response.json();
+
+            console.log(data.answer);
+
+
+            // Display LLM response
+
+            chatBox.innerHTML += `
+                <div class="message bot-message">
+                    <p>${formatLLMResponse(data.answer)}</p>
+                </div>
+            `;
+            
+            input.disabled = false; 
+            sendButton.disabled = false; // Put cursor back in 
+            // 
+            input.focus();
+
+            
+
+            
+        }
+
+        function formatLLMResponse(text) {
+
+            // If the response doesn't contain a numbered paper,
+            // display it as normal text
+            if (!/^\s*\d+\.\s+/m.test(text)) {
+                return `<p>${text}</p>`;
+            }
+
+            const lines = text.split("\n");
+
+            let html = "";
+            let currentPaper = null;
+
+            lines.forEach(line => {
+
+                line = line.trim();
+
+                const paperMatch = line.match(/^(\d+)\.\s+(.+)$/);
+
+                if (paperMatch) {
+
+                    if (currentPaper) {
+                        html += createPaperCard(currentPaper);
+                    }
+
+                    currentPaper = {
+                        number: paperMatch[1],
+                        title: paperMatch[2],
+                        reason: ""
+                    };
+
+                }
+
+                else if (line.startsWith("Reason:")) {
+
+                    if (currentPaper) {
+                        currentPaper.reason = line
+                            .replace("Reason:", "")
+                            .trim();
+                    }
+
+                }
+
+                else if (currentPaper && line !== "") {
+
+                    currentPaper.reason += " " + line;
+                }
+            });
+
+            if (currentPaper) {
+                html += createPaperCard(currentPaper);
+            }
+
+            return html;
+        }
+
+
+        function createPaperCard(paper) {
+
+            paper.title = escapeHTML(paper.title);
+            paper.reason = escapeHTML(paper.reason);
+
+            return `
+                <div class="paper-card">
+
+                    <div class="paper-number">
+                        #${paper.number}
+                    </div>
+
+                    <div class="paper-title">
+                        ${paper.title}
+                    </div>
+
+                    <div class="paper-reason-label">
+                        Reason
+                    </div>
+
+                    <div class="paper-reason">
+                        ${paper.reason}
+                    </div>
+
+                </div>
+            `;
+        }
+
+        function escapeHTML(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        </script>
+
+    </main>
+
+</body>
+</html>
+```
