@@ -38,6 +38,7 @@ if query.strip().lower() != "exit":
         CONTENT: {llm_answer}
                 """
 
+
         print(llm_answer)
 
         follow_up = input("\nEnter a follow up prompt if you would like to fine tune your search: ")
@@ -48,8 +49,17 @@ if query.strip().lower() != "exit":
         query = gen.rewrite_query(follow_up, conversation_history)
         print(f"Query: {query}")
 
-   
-# Recommend me research papers linked to neural ODE's in robotics
 
+
+
+
+
+
+
+
+# Recommend me research papers linked to neural ODE's in robotics
+#get me research papers about linear regression
+# actually give me some on robotics
+# can you give me some similar to the improving energy efficiency paper you recommended before
     
     

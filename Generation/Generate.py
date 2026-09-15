@@ -1,68 +1,100 @@
+from openai import OpenAI
 import ollama
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+client = OpenAI(
+    api_key=os.getenv('api_key'),
+    base_url="https://api.groq.com/openai/v1"
+)
 
 
 def generate_llm_prompt(context, query, conversation_history):
 
     return f"""
-You are a research paper ranker.
+You are a research paper recommendation assistant.
 
-Answer the user's query using ONLY the provided paper titles and context.
+Your task is to rank the papers provided in the CURRENT PAPER CONTEXT
+according to how relevant they are to the user's CURRENT QUERY.
 
-The context contains information about multiple research papers.
-Consider ALL papers in the context before answering.
-Do NOT ignore papers simply because they appear earlier or later.
+STRICT RULES:
+
+1. You may ONLY recommend papers whose titles appear in the
+   CURRENT PAPER CONTEXT below.
+
+2. NEVER invent, guess, or create a paper title.
+
+3. NEVER recommend a paper that does not appear in the
+   CURRENT PAPER CONTEXT.
+
+4. Do not use paper titles from the conversation history as candidates.
+   The conversation history is ONLY provided to understand the
+   conversation and previous user requests.
+
+5. Consider ALL papers in the current paper context before ranking them.
+
+6. Rank the papers by their relevance to the CURRENT QUERY.
+
+7. Do not claim that a paper discusses something unless that information
+   is supported by its title or context.
+
+8. Do NOT repeat a paper in your ranking.
+
+9. If a paper is only weakly related, it may still be included, but explain
+   why its relevance is weaker.
+
+10. If there are no papers in the current context that are relevant,
+    say so. Do NOT invent additional papers to fill the ranking.
+
+11. If the users Query has nothing to do with asking FOR research papers, say
+    you do not support that functionality and are only here for research paper
+    purposes.
 
 
-For each ranked paper, explain why it is relevant to the query.
-Do not invent paper titles, authors, or details that are not present in the context.
+OUTPUT FORMAT:
 
-You should RANK the papers, not discard them simply because they are not highly relevant.
-Additionally, you can have another section specifically for these other papers that are not highly relevant.
+1. [ACTUAL PAPER TITLE]
+   Reason: [Brief explanation of why this paper is relevant (or not).]
 
+2. [ACTUAL PAPER TITLE]
+   Reason: [Brief explanation of why this paper is relevant (or not).]
 
-A paper can still be relevant if it contains experiments, methods,
-results, or discussion that provide useful evidence about the query.
-
-However, do not consider a paper relevant merely because it shares
-general concepts or keywords with the query.
-
-Your Answer MUST be numbered and take the following format for each ranking:
-    - [ACTUAL PAPER TITLE]
-    - Reason: [Brief explanation of why this paper is relevant to the query.]
-
-Additionally, DO NOT repeat papers in your ranking.
-
-Finally, you also have the coversation history which shows user prompts and your responses. You ARE THE Assistant.
-If papers in the context are also in the conversation history, simply DO NOT talk about them in your response AT ALL.
+You MUST continue for ALL other papers in the CURRENT PAPER CONTEXT.
+(MAKE output is numbered accordindly too)
 
 IMPORTANT:
-    - DO NOT repeat papers that are in conversation history EVEN WHEN they are highly relevant.
-    - For example, if a user asks for papers similar to something you ranked before, do not include that result in your next ranking.
-    - You can tell the user that no other papers in the database are relevant to their query if all papers in conversation history have been listed before.
+Every paper title in your answer MUST exactly match a paper title
+provided in the CURRENT PAPER CONTEXT.
 
 CONVERSATION HISTORY:
-{conversation_history}    
+{conversation_history}
 
-PAPER TITLES AND CONTEXT:
+CURRENT PAPER CONTEXT:
 {context}
 
-Query:
+CURRENT USER QUERY:
 {query}
 """
 
 
-def ask_llm(llm_prompt, llm="mistral:7b"):
-    return ollama.generate(
-        model=llm, 
-        prompt=llm_prompt,
-        options = {
-            "num_ctx" : 10000
-        }
+def ask_llm(llm_prompt):
 
-        )['response']
+    response = client.chat.completions.create(
+        model="openai/gpt-oss-120b",
+        messages=[
+            {"role": "user", "content": llm_prompt}
+        ],
+        temperature=0
+    )
 
-def rewrite_query(follow_up, conversation_history, llm="mistral:7b"):
-        
+    print(response.usage)
+
+    return response.choices[0].message.content
+
+
+def rewrite_query(follow_up, conversation_history):
 
     prompt = f"""
 You are a research query rewriting assistant.
@@ -98,10 +130,12 @@ FOLLOW-UP REQUEST:
 REWRITTEN SEARCH QUERY:
 """
 
-    return ollama.generate(
-        model=llm,
-        prompt=prompt,
-        options={
-            "num_ctx": 10000
-        }
-    )['response'].strip()
+    response = client.chat.completions.create(
+        model="openai/gpt-oss-120b",
+        messages=[
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0
+    )
+
+    return response.choices[0].message.content.strip()
