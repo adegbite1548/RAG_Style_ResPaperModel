@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>GPT Style Research Paper Recommender</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <nav>
+        <div class="logo">Research Paper Recommender</div>
+    </nav>
+
+    <main class="home-container">
+
+        <section class="hero">
+            <h1>GPT Style Research Paper Recommender</h1>
+
+            <p class="description">
+                Find relevant research papers using natural language.
+                Describe what you are interested in and receive personalised
+                recommendations ranked according to their relevance.
+            </p>
+
+            <a href="{{ url_for('chatbot') }}" class="start-button">
+                Start Recommending
+            </a>
+        </section>
+
+        <section class="about">
+            <h2>About the Project</h2>
+
+            <p>
+                This system uses retrieval-augmented generation to search
+                through a large collection of research papers and get
+                papers that are most relevant to your query.
+            </p>
+
+            <p>
+                The database this uses was created from scratch and is mainly comprised of papers relating to artificial
+                intelligence. So you can find papers linked to fields like robotics, computer vision e.t.c. As time goes on
+                more will be added to the database.
+            </p>
+        </section>
+
+    </main>
+
+</body>
+</html>
+```
